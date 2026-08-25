@@ -1,0 +1,33 @@
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT}
+
+@oc2a_root path /oc2a
+redir @oc2a_root /oc2a/ 308
+
+@pool_root path /pool
+redir @pool_root /pool/ 308
+
+handle_path /oc2a/* {
+	reverse_proxy 127.0.0.1:8081
+}
+
+handle_path /pool/* {
+	reverse_proxy 127.0.0.1:9091
+}
+
+handle /v1/* {
+	reverse_proxy 127.0.0.1:8080
+}
+
+handle /healthz {
+	respond "ok" 200
+}
+
+handle {
+	root * /srv/portal
+	file_server
+}

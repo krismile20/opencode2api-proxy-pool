@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: opencode-proxy-pool
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    envVars:
+      # 客户端访问 API 用的 sk-rp-* 密钥，逗号分隔。留空则 API 不做鉴权（不推荐）
+      - key: SERVER_KEYS
+        sync: false
+      # 代理池订阅链接，逗号分隔，可含 token
+      - key: PROXY_SUBSCRIPTIONS
+        sync: false
+      # easy_proxies 管理面板 (/pool/) 登录密码，必设
+      - key: MGMT_PASSWORD
+        sync: false
+      # opencode2api 管理台 (/oc2a/) 登录密码，留空则随机生成（启动日志不会打印）
+      - key: OC2A_WEBUI_PASSWORD
+        sync: false
