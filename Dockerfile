@@ -12,8 +12,13 @@ ARG OC2A_REF
 ARG EP_REF
 ARG GOPROXY=https://goproxy.cn,direct
 
-RUN apk add --no-cache git ca-certificates \
+RUN apk add --no-cache git ca-certificates wget tar \
  && go env -w GOPROXY="${GOPROXY}"
+
+ARG CADDY_VERSION=v2.11.4
+RUN mkdir -p /out \
+ && wget -qO- "https://github.com/caddyserver/caddy/releases/download/${CADDY_VERSION}/caddy_${CADDY_VERSION#v}_linux_amd64.tar.gz" \
+    | tar -xz -C /out caddy
 
 RUN git clone "${OC2A_REPO}" /src/opencode2api \
  && git -C /src/opencode2api checkout --detach "${OC2A_REF}" \
@@ -27,7 +32,7 @@ RUN cd /src/opencode2api \
  && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /out/opencode2api .
 
 RUN cd /src/easy_proxies \
- && CGO_ENABLED=0 go build -trimpath -tags "with_utls with_quic with_grpc" -ldflags "-s -w" -o /out/easy_proxies ./cmd/easy_proxies
+ && CGO_ENABLED=0 go build -trimpath -tags "with_utls with_quic with_grpc with_clash_api" -ldflags "-s -w" -o /out/easy_proxies ./cmd/easy_proxies
 
 FROM debian:bookworm-slim
 
@@ -36,7 +41,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
 
-COPY --from=caddy:2 /usr/bin/caddy /usr/local/bin/caddy
+COPY --from=builder /out/caddy /usr/local/bin/caddy
 COPY --from=builder /out/opencode2api /usr/local/bin/opencode2api
 COPY --from=builder /out/easy_proxies /usr/local/bin/easy_proxies
 
